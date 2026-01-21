@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hospital Municipal Tupi</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    /* --- CSS mantido igual ao seu --- */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: url('https://medicinotas.b-cdn.net/wp-content/uploads/sites/4/2021/01/Precios-referencia-medicamentos-1280x720-1.jpg') no-repeat center center fixed;
+      background-size: cover;
+      transition: background 0.3s, color 0.3s;
+    }
+    .container {
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 800px;
+      width: 90%;
+      margin: 40px auto;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    h1, h2 { text-align: center; }
+    label { display: block; margin: 8px 0 2px 0; }
+    input, button {
+      margin: 5px 0;
+      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover, button:focus { background-color: #0056b3; }
+    .tab-btn {
+      background-color: #ccc;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #333;
+      transition: background-color 0.3s;
+      border-radius: 4px 4px 0 0;
+      margin-right: 2px;
+    }
+    .tab-btn.active {
+      background-color: #007BFF;
+      color: white;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    #lista {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: flex-start;
+      margin-top: 10px;
+    }
+    .med-item {
+      flex: 1 1 48%;
+      min-width: 240px;
+      max-width: 48%;
+      box-sizing: border-box;
+      border: 1px solid #535353;
+      border-radius: 8px;
+      background: #f8f8f8;
+      padding: 10px 12px;
+      margin: 0;
+      margin-bottom: 0;
+      transition: background 0.3s, color 0.3s, box-shadow 0.2s;
+      box-shadow: 0 1px 6px #0001;
+      display: flex;
+      flex-direction: column;
+    }
+    .med-item strong { font-size: 1.08em; color: #222a; margin-bottom: 4px; }
+    .med-item button {
+      width: auto;
+      margin-right: 5px;
+      margin-top: 3px;
+      margin-bottom: 3px;
+      font-size: 0.98em;
+      padding: 6px 10px;
+    }
+    @media (max-width: 800px) {
+      .med-item { min-width: 48%; max-width: 48%; }
+    }
+    @media (max-width: 600px) {
+      #lista { gap: 10px; }
+      .med-item { min-width: 100%; max-width: 100%; }
+    }
+    .mov-list {
+      margin-top: 5px;
+      padding-left: 10px;
+      color: rgb(128, 128, 128);
+      font-size: 0.9em;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .form-msg {
+      color: #d8000c;
+      min-height: 1.5em;
+      margin-top: 10px;
+    }
+    .success { color: green; }
+    .loading {
+      color: #007BFF;
+      font-weight: bold;
+      text-align: center;
+    }
+    .validade-alerta {
+      background: #ffe9e0;
+      border: 1px solid #e96c2c !important;
+      color: #c03a00 !important;
+      font-weight: bold;
+      padding: 2px 7px;
+      border-radius: 6px;
+      margin-left: 6px;
+      font-size: 0.98em;
+      display: inline-block;
+    }
+    body.dark-mode .validade-alerta {
+      background: #3d2d21;
+      color: #ffb074 !important;
+      border-color: #ff944d !important;
+    }
+    .dark-toggle-btn {
+      position: fixed;
+      top: 8px;
+      right: 8px;
+      z-index: 100;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      background: #222;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .dark-toggle-btn:active { box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+    .dark-toggle-btn:hover, .dark-toggle-btn:focus { background: #444; }
+    #logoutBtn {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 101;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      background: #b60000;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      transition: background 0.2s, color 0.2s;
+      outline: none;
+      display: none;
+    }
+    #logoutBtn.show { display: flex; }
+    #logoutBtn:hover, #logoutBtn:focus { background: #ff3333; }
+    @media (max-width: 600px) {
+      .dark-toggle-btn, #logoutBtn {
+        top: 4px;
+        width: 22px;
+        height: 22px;
+        font-size: 0.9rem;
+      }
+      .dark-toggle-btn { right: 4px; }
+      #logoutBtn { left: 4px; }
+    }
+    .modal-bg {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.4);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-bg.active { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      max-width: 350px;
+      width: 90%;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .modal .close {
+      position: absolute;
+      top: 8px; right: 12px;
+      font-size: 1.5rem;
+      color: #333;
+      cursor: pointer;
+    }
+    body.dark-mode {
+      background: #191b1f !important;
+      color: #f2f2f2;
+    }
+    body.dark-mode .container {
+      background-color: rgba(30, 32, 40, 0.93);
+      color: #f2f2f2;
+    }
+    body.dark-mode .tab-btn {
+      background-color: #343842;
+      color: #b8b8b8;
+    }
+    body.dark-mode .tab-btn.active {
+      background-color: #0056b3;
+      color: #fff;
+    }
+    body.dark-mode .med-item {
+      background-color: #23252c;
+      color: #e5e5e5;
+      border-color: #393b44;
+    }
+    body.dark-mode input, body.dark-mode select, body.dark-mode textarea {
+      background: #23252c;
+      color: #f2f2f2;
+      border: 1px solid #444;
+    }
+    body.dark-mode button, body.dark-mode .tab-btn {
+      background-color: #0056b3;
+      color: #fff;
+    }
+    body.dark-mode button:hover, body.dark-mode button:focus,
+    body.dark-mode .tab-btn:hover, body.dark-mode .tab-btn:focus {
+      background-color: #007bff;
+      color: #fff;
+    }
+    body.dark-mode .form-msg { color: #ffbaba; }
+    body.dark-mode .success { color: #90ee90; }
+    body.dark-mode .loading { color: #90c9ff; }
+    body.dark-mode .modal { background: #23252c; color: #e5e5e5; }
+    body.dark-mode .modal .close { color: #f2f2f2; }
+    body.dark-mode .mov-list { color: #b8b8b8; }
+    #loginContainer, #registerContainer {
+      background-color: rgba(255,255,255,0.97);
+      max-width: 340px;
+      margin: 80px auto;
+      padding: 32px 24px 24px 24px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.15);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    #loginContainer h2, #registerContainer h2 { margin-bottom: 10px; }
+    #loginContainer input, #registerContainer input {
+      margin-bottom: 10px;
+      background: #f8f8f8;
+    }
+    #loginMsg, #registerMsg {
+      min-height: 1.5em;
+      margin-bottom: 6px;
+      color: #d8000c;
+      text-align: center;
+    }
+    body.dark-mode #loginContainer, body.dark-mode #registerContainer {
+      background: #292b33;
+      color: #e0e0e0;
+      box-shadow: 0 0 15px #0008;
+    }
+    body.dark-mode #loginContainer input, body.dark-mode #registerContainer input {
+      background: #23252c;
+      color: #f2f2f2;
+      border: 1px solid #444;
+    }
+    body.dark-mode #loginMsg, body.dark-mode #registerMsg { color: #ffbaba; }
+  </style>
+</head>
+<body>
+  <button class="dark-toggle-btn" id="darkToggle" aria-label="Alternar modo escuro" title="Alternar modo escuro">🌙</button>
+  <button id="logoutBtn" title="Sair" aria-label="Sair">⎋</button>
+  <!-- Área principal do app -->
+  <div class="container" id="mainContainer" style="display:none;" role="main" aria-label="Controle de Medicamentos">
+    <h1>🏥 Controle de Medicamentos</h1>
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="cadastro" aria-selected="true">📝 Cadastro</button>
+      <button class="tab-btn" data-tab="estoque" aria-selected="false">📋 Estoque</button>
+    </div>
+    <div id="cadastro" class="tab-content active" role="tabpanel">
+      <h2>➕ Adicionar Medicamento</h2>
+      <form id="medForm" autocomplete="off">
+        <input type="hidden" id="medId" name="medId" />
+        <label for="nome">Nome do Medicamento</label>
+        <input type="text" id="nome" name="nome" required aria-required="true" />
+        <label for="qtd">Quantidade inicial</label>
+        <input type="number" id="qtd" name="qtd" required min="0" aria-required="true" />
+        <label for="validade">Validade</label>
+        <input type="date" id="validade" name="validade" />
+        <label for="descricao">Descrição</label>
+        <input type="text" id="descricao" name="descricao" />
+        <div class="form-actions">
+          <button type="submit">Salvar</button>
+          <button type="reset" id="btnLimpar">Limpar</button>
+        </div>
+        <div id="formMsg" role="alert" class="form-msg"></div>
+      </form>
+    </div>
+    <div id="estoque" class="tab-content" role="tabpanel">
+      <h2>🔍 Pesquisar Medicamento</h2>
+      <label for="pesquisa" style="display:none;">Pesquisar medicamento</label>
+      <input type="text" id="pesquisa" placeholder="Digite o nome do medicamento..." aria-label="Pesquisar medicamento" autocomplete="off" />
+      <h2>📦 Lista de Medicamentos</h2>
+      <div id="lista"></div>
+      <div id="loading" class="loading" aria-live="polite"></div>
+    </div>
+  </div>
+  <!-- LOGIN -->
+  <div id="loginContainer">
+    <h2>Login</h2>
+    <div id="loginMsg"></div>
+    <form id="loginForm" autocomplete="off">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" required placeholder="Seu e-mail" />
+      <label for="loginSenha">Senha</label>
+      <input type="password" id="loginSenha" required placeholder="Sua senha" />
+      <button type="submit">Entrar</button>
+    </form>
+    <button id="showRegisterBtn" style="margin-top:8px;width:100%;">Cadastrar</button>
+  </div>
+  <!-- CADASTRO DE USUÁRIO -->
+  <div id="registerContainer" style="display:none;">
+    <h2>Cadastrar usuário</h2>
+    <div id="registerMsg"></div>
+    <form id="registerForm" autocomplete="off">
+      <label for="registerEmail">Email</label>
+      <input type="email" id="registerEmail" required placeholder="Seu e-mail" />
+      <label for="registerSenha">Senha</label>
+      <input type="password" id="registerSenha" required placeholder="Sua senha (mín. 6 caracteres)" minlength="6" />
+      <button type="submit">Cadastrar</button>
+    </form>
+    <button id="showLoginBtn" style="margin-top:8px;width:100%;">Já tenho login</button>
+  </div>
+  <!-- Modal movimentação -->
+  <div class="modal-bg" id="modalMov">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <span class="close" tabindex="0" id="closeModal" aria-label="Fechar">&times;</span>
+      <h3 id="modalTitle">Registrar Movimentação</h3>
+      <form id="movForm">
+        <input type="hidden" id="movMedId" />
+        <input type="hidden" id="movTipo" />
+        <label for="movQtd">Quantidade*</label>
+        <input type="number" id="movQtd" required min="1" />
+        <label for="movObs">Observação</label>
+        <input type="text" id="movObs" />
+        <button type="submit">Registrar</button>
+        <div id="movMsg" class="form-msg"></div>
+      </form>
+    </div>
+  </div>
+  <script>
+    // Supabase config
+    const SUPABASE_URL = 'https://rlidmipyowlxgfnlgssz.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsaWRtaXB5b3dseGdmbmxnc3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDkyMDUsImV4cCI6MjA3NTUyNTIwNX0.9iZiKZgwJ6BpWx5z4VOaDywSQyY-UQrICCV3Jfv6FWU';
+
+    // Orientação a Objetos - Classes para Medicamento e serviço Supabase
+    class SupabaseService {
+      constructor(url, key) {
+        this.client = supabase.createClient(url, key);
+      }
+      async getMedicamentos() {
+        return await this.client.from('medicamentos').select('*').order('nome', { ascending: true });
+      }
+      async getMedicamentoById(id) {
+        return await this.client.from('medicamentos').select('*').eq('id', id).single();
+      }
+      async insertMedicamento(med) {
+        return await this.client.from('medicamentos').insert([med]);
+      }
+      async updateMedicamento(id, data) {
+        return await this.client.from('medicamentos').update(data).eq('id', id);
+      }
+      async deleteMedicamento(id) {
+        return await this.client.from('medicamentos').delete().eq('id', id);
+      }
+      async getMovimentacoes(medId) {
+        return await this.client.from('movimentacoes').select('*').eq('medicamento_id', medId).order('data', { ascending: false });
+      }
+      async insertMovimentacao(mov) {
+        return await this.client.from('movimentacoes').insert([mov]);
+      }
+      async searchMedicamentos(nome) {
+        return await this.client.from('medicamentos').select('*').ilike('nome', nome);
+      }
+      // Autenticação
+      async signUp(email, password) {
+        return await this.client.auth.signUp({ email, password });
+      }
+      async signIn(email, password) {
+        return await this.client.auth.signInWithPassword({ email, password });
+      }
+      async signOut() {
+        return await this.client.auth.signOut();
+      }
+      async getSession() {
+        return await this.client.auth.getSession();
+      }
+      onAuthStateChange(cb) {
+        return this.client.auth.onAuthStateChange(cb);
+      }
+    }
+
+    class Medicamento {
+      constructor({ id, nome, qtd_atual, validade, descricao }) {
+        this.id = id;
+        this.nome = nome;
+        this.qtd_atual = qtd_atual;
+        this.validade = validade;
+        this.descricao = descricao;
+      }
+      estaVencido() {
+        if (!this.validade) return false;
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+        const dtVal = new Date(this.validade + 'T00:00:00');
+        dtVal.setHours(0,0,0,0);
+        return (dtVal < hoje);
+      }
+      pertoDeVencer() {
+        if (!this.validade) return false;
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+        const dtVal = new Date(this.validade + 'T00:00:00');
+        dtVal.setHours(0,0,0,0);
+        const diff = Math.ceil((dtVal - hoje) / (1000 * 60 * 60 * 24));
+        return diff >= 0 && diff <= 7;
+      }
+    }
+
+    // Objetos globais
+    const supaService = new SupabaseService(SUPABASE_URL, SUPABASE_KEY);
+
+    // Sessão de usuário
+    let debounceTimeout = null;
+
+    // Modo escuro
+    const darkToggleBtn = document.getElementById('darkToggle');
+    function setDarkMode(dark) {
+      if (dark) {
+        document.body.classList.add('dark-mode');
+        darkToggleBtn.innerHTML = '☀';
+        darkToggleBtn.title = 'Alternar para modo claro';
+        localStorage.setItem('dark-mode', 'true');
+      } else {
+        document.body.classList.remove('dark-mode');
+        darkToggleBtn.innerHTML = '🌙';
+        darkToggleBtn.title = 'Alternar para modo escuro';
+        localStorage.setItem('dark-mode', 'false');
+      }
+    }
+    setDarkMode(localStorage.getItem('dark-mode') === 'true');
+    darkToggleBtn.addEventListener('click', () => {
+      setDarkMode(!document.body.classList.contains('dark-mode'));
+    });
+
+    // Login/Cadastro
+    const loginContainer = document.getElementById('loginContainer');
+    const mainContainer = document.getElementById('mainContainer');
+    const loginForm = document.getElementById('loginForm');
+    const loginMsg = document.getElementById('loginMsg');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const registerContainer = document.getElementById('registerContainer');
+    const registerForm = document.getElementById('registerForm');
+    const registerMsg = document.getElementById('registerMsg');
+    const showRegisterBtn = document.getElementById('showRegisterBtn');
+    const showLoginBtn = document.getElementById('showLoginBtn');
+
+    showRegisterBtn.addEventListener('click', () => {
+      loginContainer.style.display = "none";
+      registerContainer.style.display = "flex";
+      registerMsg.textContent = '';
+      registerForm.reset();
+      history.pushState(null, '', '#cadastro-usuario');
+    });
+    showLoginBtn.addEventListener('click', () => {
+      registerContainer.style.display = "none";
+      loginContainer.style.display = "flex";
+      loginMsg.textContent = '';
+      loginForm.reset();
+      history.pushState(null, '', '#login');
+    });
+
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      registerMsg.textContent = '';
+      const email = document.getElementById('registerEmail').value.trim();
+      const senha = document.getElementById('registerSenha').value;
+      if (senha.length < 6) {
+        registerMsg.textContent = "A senha deve ter pelo menos 6 caracteres.";
+        return;
+      }
+      registerMsg.textContent = 'Cadastrando...';
+      const { error } = await supaService.signUp(email, senha);
+      if (error) {
+        registerMsg.textContent = error.message || "Erro ao cadastrar usuário";
+      } else {
+        registerMsg.textContent = "Cadastro realizado! Verifique seu e-mail.";
+        setTimeout(() => {
+          registerContainer.style.display = "none";
+          loginContainer.style.display = "flex";
+          loginMsg.textContent = "Cadastro feito! Verifique seu e-mail antes de logar.";
+          loginForm.reset();
+          history.pushState(null, '', '#login');
+        }, 1200);
+      }
+    });
+
+    async function checkSession() {
+      const { data: { session } } = await supaService.getSession();
+      if (session && session.user) {
+        showApp();
+      } else {
+        showLogin();
+      }
+    }
+    function showLogin() {
+      loginContainer.style.display = "flex";
+      mainContainer.style.display = "none";
+      registerContainer.style.display = "none";
+      logoutBtn.classList.remove("show");
+      history.replaceState(null, '', '#login');
+    }
+    function showApp() {
+      loginContainer.style.display = "none";
+      mainContainer.style.display = "";
+      registerContainer.style.display = "none";
+      logoutBtn.classList.add("show");
+      carregarMedicamentos();
+      const hash = window.location.hash.replace('#', '');
+      if (hash === 'estoque' || hash === 'cadastro') {
+        trocarAba(hash);
+      } else {
+        trocarAba('cadastro');
+      }
+    }
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginMsg.textContent = '';
+      const email = document.getElementById('loginEmail').value.trim();
+      const senha = document.getElementById('loginSenha').value;
+      loginMsg.textContent = 'Entrando...';
+      const { error } = await supaService.signIn(email, senha);
+      if (error) {
+        loginMsg.textContent = error.message || "Usuário ou senha inválidos!";
+      } else {
+        loginMsg.textContent = "";
+        showApp();
+      }
+    });
+    logoutBtn.addEventListener('click', async () => {
+      await supaService.signOut();
+      showLogin();
+    });
+    supaService.onAuthStateChange((_event, session) => {
+      if (session && session.user) {
+        showApp();
+      } else {
+        showLogin();
+      }
+    });
+    checkSession();
+
+    // Alternância abas
+    function trocarAba(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      document.querySelector('.tab-btn[data-tab="' + tab + '"]').classList.add('active');
+      document.querySelector('.tab-btn[data-tab="' + tab + '"]').setAttribute('aria-selected', 'true');
+      document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      history.pushState(null, '', '#' + tab);
+      if (tab === 'estoque') carregarMedicamentos();
+    }
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        trocarAba(btn.dataset.tab);
+      });
+    });
+    window.addEventListener('DOMContentLoaded', function() {
+      const hash = window.location.hash.replace('#', '');
+      if (hash === 'cadastro-usuario') {
+        loginContainer.style.display = "none";
+        registerContainer.style.display = "flex";
+        mainContainer.style.display = "none";
+      } else if (hash === 'login') {
+        loginContainer.style.display = "flex";
+        registerContainer.style.display = "none";
+        mainContainer.style.display = "none";
+      } else if (hash === 'estoque' || hash === 'cadastro') {
+        if (mainContainer.style.display !== "none") {
+          trocarAba(hash);
+        }
+      }
+    });
+
+    // ----------- CRUD -----------
+
+    const form = document.getElementById('medForm');
+    const lista = document.getElementById('lista');
+    const inputPesquisa = document.getElementById('pesquisa');
+    const formMsg = document.getElementById('formMsg');
+    const loadingMsg = document.getElementById('loading');
+    const modalMov = document.getElementById('modalMov');
+    const movForm = document.getElementById('movForm');
+    const movMsg = document.getElementById('movMsg');
+    const closeModalBtn = document.getElementById('closeModal');
+
+    document.getElementById('btnLimpar').addEventListener('click', limparForm);
+    function limparForm() {
+      form.reset();
+      formMsg.textContent = '';
+      document.getElementById('medId').value = '';
+      document.getElementById('validade').value = '';
+    }
+
+    async function carregarMedicamentos() {
+      if (mainContainer.style.display === "none") return;
+      loadingMsg.textContent = 'Carregando...';
+      const { data: medicamentos, error } = await supaService.getMedicamentos();
+      loadingMsg.textContent = '';
+      if (error) {
+        lista.innerHTML = '<p class="form-msg">Erro ao carregar medicamentos.</p>';
+        return;
+      }
+      renderizarLista(medicamentos);
+    }
+
+    function renderizarLista(medicamentos) {
+      lista.innerHTML = '';
+      if (!medicamentos || medicamentos.length === 0) {
+        lista.innerHTML = '<p>Nenhum medicamento encontrado.</p>';
+        return;
+      }
+      const hoje = new Date();
+      hoje.setHours(0,0,0,0);
+      for (const medObj of medicamentos) {
+        const med = new Medicamento(medObj);
+        const div = document.createElement('div');
+        div.className = 'med-item';
+        let validadeStr = 'Sem validade';
+        let alertaValidade = '';
+        if (med.validade) {
+          let dtVal = new Date(med.validade + 'T00:00:00');
+          validadeStr = dtVal.toLocaleDateString();
+          dtVal.setHours(0,0,0,0);
+          const diffDias = Math.ceil((dtVal - hoje) / (1000 * 60 * 60 * 24));
+          if (med.estaVencido()) {
+            alertaValidade = `<span class="validade-alerta" title="Este medicamento está vencido!">❌ Medicamento vencido!</span>`;
+          } else if (med.pertoDeVencer()) {
+            alertaValidade = `<span class="validade-alerta" title="Este medicamento está perto de vencer!">⚠ Perto de vencer!</span>`;
+          }
+        }
+        div.innerHTML = `
+          <strong>${med.nome}</strong> - Estoque: ${med.qtd_atual}<br/>
+          Validade: ${validadeStr} ${alertaValidade}<br/>
+          ${med.descricao || 'Sem descrição'}
+          <br/>
+          <button class="edit-btn" data-id="${med.id}">✏ Editar</button>
+          <button class="delete-btn" data-id="${med.id}">🗑 Excluir</button>
+          <button class="entrada-btn" data-id="${med.id}">➕ Entrada</button>
+          <button class="saida-btn" data-id="${med.id}">➖ Saída</button>
+          <div class="mov-list" id="mov-${med.id}">Carregando movimentações...</div>
+        `;
+        lista.appendChild(div);
+        carregarMovimentacoes(med.id);
+      }
+      document.querySelectorAll('.edit-btn').forEach(btn =>
+        btn.addEventListener('click', () => editarMedicamento(btn.dataset.id))
+      );
+      document.querySelectorAll('.delete-btn').forEach(btn =>
+        btn.addEventListener('click', () => excluirMedicamento(btn.dataset.id))
+      );
+      document.querySelectorAll('.entrada-btn').forEach(btn =>
+        btn.addEventListener('click', () => mostrarModalMov(btn.dataset.id, 'entrada'))
+      );
+      document.querySelectorAll('.saida-btn').forEach(btn =>
+        btn.addEventListener('click', () => mostrarModalMov(btn.dataset.id, 'saida'))
+      );
+    }
+
+    inputPesquisa.addEventListener('input', function () {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(async () => {
+        const termo = this.value.toLowerCase().trim();
+        const { data: medicamentos, error } = await supaService.getMedicamentos();
+        if (error) {
+          lista.innerHTML = '<p class="form-msg">Erro ao buscar medicamentos.</p>';
+          return;
+        }
+        const filtrados = medicamentos.filter(med =>
+          med.nome.toLowerCase().includes(termo)
+        );
+        renderizarLista(filtrados);
+      }, 300);
+    });
+
+    async function carregarMovimentacoes(medId) {
+      const { data: movimentacoes, error } = await supaService.getMovimentacoes(medId);
+      const container = document.getElementById(`mov-${medId}`);
+      if (!movimentacoes || movimentacoes.length === 0) {
+        container.innerHTML = 'Sem movimentações registradas.';
+        return;
+      }
+      container.innerHTML = movimentacoes.map(mov => {
+        const data = new Date(mov.data).toLocaleString();
+        return `🕒 ${data} - <strong>${mov.tipo.toUpperCase()}</strong> de ${mov.quantidade} ${mov.observacao ? '(' + mov.observacao + ')' : ''}`;
+      }).join('<br/>');
+    }
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      formMsg.textContent = '';
+      const id = document.getElementById('medId').value;
+      const nome = document.getElementById('nome').value.trim();
+      const qtd = parseInt(document.getElementById('qtd').value);
+      const validade = document.getElementById('validade').value;
+      const descricao = document.getElementById('descricao').value;
+
+      if (!nome || isNaN(qtd)) {
+        formMsg.textContent = 'Preencha todos os campos obrigatórios.';
+        return;
+      }
+      if (id) {
+        const response = await supaService.updateMedicamento(id, { nome, qtd_atual: qtd, validade, descricao });
+
+        if (response.error) {
+          formMsg.textContent = 'Erro ao salvar: ' + response.error.message;
+        } else {
+          form.reset();
+          formMsg.textContent = 'Salvo com sucesso!';
+          formMsg.classList.add('success');
+          setTimeout(() => { formMsg.textContent = ''; formMsg.classList.remove('success'); }, 1800);
+          carregarMedicamentos();
+          trocarAba('estoque');
+        }
+      } else {
+        // Cadastro: verifica se já existe por nome (case-insensitive)
+        const { data: existentes, error: searchError } = await supaService.searchMedicamentos(nome);
+
+        if (searchError) {
+          formMsg.textContent = 'Erro ao buscar medicamento: ' + searchError.message;
+          return;
+        }
+
+        if (existentes && existentes.length > 0) {
+          // Já existe: soma quantidades
+          const existente = existentes[0];
+          const novaQtd = (existente.qtd_atual || 0) + qtd;
+          const { error: updateError } = await supaService.updateMedicamento(existente.id, { qtd_atual: novaQtd });
+
+          if (updateError) {
+            formMsg.textContent = 'Erro ao atualizar quantidade: ' + updateError.message;
+          } else {
+            form.reset();
+            formMsg.textContent = 'Quantidade somada ao medicamento existente!';
+            formMsg.classList.add('success');
+            setTimeout(() => { formMsg.textContent = ''; formMsg.classList.remove('success'); }, 1800);
+            carregarMedicamentos();
+            trocarAba('estoque');
+          }
+        } else {
+          // Não existe, insere novo
+          const response = await supaService.insertMedicamento({ nome, qtd_atual: qtd, validade, descricao });
+          if (response.error) {
+            formMsg.textContent = 'Erro ao salvar: ' + response.error.message;
+          } else {
+            form.reset();
+            formMsg.textContent = 'Salvo com sucesso!';
+            formMsg.classList.add('success');
+            setTimeout(() => { formMsg.textContent = ''; formMsg.classList.remove('success'); }, 1800);
+            carregarMedicamentos();
+            trocarAba('estoque');
+          }
+        }
+      }
+    });
+
+    async function excluirMedicamento(id) {
+      if (confirm('Tem certeza que deseja excluir este medicamento?')) {
+        const { error } = await supaService.deleteMedicamento(id);
+        if (error) alert('Erro ao excluir.');
+        carregarMedicamentos();
+      }
+    }
+
+    async function editarMedicamento(id) {
+      const { data: med, error } = await supaService.getMedicamentoById(id);
+      if (!med || error) {
+        alert('Erro ao carregar medicamento.');
+        return;
+      }
+      document.getElementById('medId').value = med.id;
+      document.getElementById('nome').value = med.nome;
+      document.getElementById('qtd').value = med.qtd_atual;
+      document.getElementById('validade').value = med.validade || '';
+      document.getElementById('descricao').value = med.descricao || '';
+      trocarAba('cadastro');
+    }
+
+    function mostrarModalMov(medId, tipo) {
+      modalMov.classList.add('active');
+      document.getElementById('movMedId').value = medId;
+      document.getElementById('movTipo').value = tipo;
+      movForm.reset();
+      movMsg.textContent = '';
+      document.getElementById('movQtd').focus();
+    }
+    function fecharModalMov() {
+      modalMov.classList.remove('active');
+    }
+    closeModalBtn.addEventListener('click', fecharModalMov);
+    modalMov.addEventListener('click', (e) => {
+      if (e.target === modalMov) fecharModalMov();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (modalMov.classList.contains('active') && e.key === 'Escape') fecharModalMov();
+    });
+
+    movForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      movMsg.textContent = '';
+      const id = document.getElementById('movMedId').value;
+      const tipo = document.getElementById('movTipo').value;
+      const qtd = parseInt(document.getElementById('movQtd').value);
+      const obs = document.getElementById('movObs').value;
+
+      if (!qtd || qtd <= 0) {
+        movMsg.textContent = "Quantidade inválida";
+        return;
+      }
+
+      const { data: med, error: medError } = await supaService.getMedicamentoById(id);
+
+      if (medError || med == null || typeof med.qtd_atual !== 'number') {
+        movMsg.textContent = "Erro ao buscar medicamento.";
+        return;
+      }
+
+      let estoqueAtual = Number(med.qtd_atual) || 0;
+      let novaQtd = estoqueAtual;
+
+      if (tipo === 'entrada') {
+        novaQtd = estoqueAtual + qtd;
+      } else if (tipo === 'saida') {
+        if (qtd > estoqueAtual) {
+          movMsg.textContent = "Estoque insuficiente!";
+          return;
+        }
+        novaQtd = estoqueAtual - qtd;
+      } else {
+        movMsg.textContent = "Tipo de movimentação inválido";
+        return;
+      }
+
+      const { error: insertError } = await supaService.insertMovimentacao({
+        medicamento_id: id,
+        tipo: tipo,
+        quantidade: qtd,
+        observacao: obs,
+        data: new Date().toISOString()
+      });
+      if (insertError) {
+        movMsg.textContent = "Erro ao registrar movimentação.";
+        return;
+      }
+
+      const { error: updateError } = await supaService.updateMedicamento(id, { qtd_atual: novaQtd });
+
+      if (updateError) {
+        movMsg.textContent = "Erro ao atualizar estoque.";
+        return;
+      }
+      movMsg.textContent = "Movimentação registrada!";
+      movMsg.classList.add('success');
+      setTimeout(() => {
+        fecharModalMov();
+        carregarMedicamentos();
+        movMsg.classList.remove('success');
+      }, 500);
+    });
+  </script>
+</body>
+</html>
